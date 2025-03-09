@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Add product{% endblock %}
+    {% block styles %}
+        {{ bootstrap.load_css() }}
+        <link rel="stylesheet" href="{{ url_for('static',filename='styles.css')}}">
+    {% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="display-4 text-center">Edit product</h1>
+    <form action="{{ url_for('edit', article_code=article.code) }}" method="post">
+        <label for="name" class="form-label">Product name:</label>
+        <input type="text" class="form-control" name="name" id="name" value="{{ article.name }}" readonly>
+
+        <label for="description" class="form-label">Description:</label>
+        <input type="text" class="form-control" name="description" id="description" value="{{ article.description }}" readonly>
+
+        <label for="quantity" class="form-label">Quantity:</label>
+        <input type="text" class="form-control" id="quantity" name="quantity" value="{{ article.quantity }}">
+
+        <label for="unit_price" class="form-label">Unit Price $:</label>
+        <input type="text" class="form-control" id="unit_price" name="unit_price" value="{{ article.unit_price }}">
+
+        <button type="submit" class="btn btn-primary">Update</button>
+    </form>
+    <br>
+    <a href="{{ url_for('home') }}" class="btn btn-secondary mt-3">Return Home</a>
+</div>
+
+{% endblock %}

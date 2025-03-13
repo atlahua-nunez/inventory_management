@@ -38,7 +38,7 @@
                   <td>{{article.name}} </td>
                   <td>{{article.description}} </td>
                   <td>{{article.quantity}}</td>
-                  <td>{{article.unit_price}}</td>
+                  <td>{{ "%.2f"|format(article.unit_price) }}</td>
                   <td>
                       <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('edit', article_code=article.code) }}">
                       <button class="btn" type="button">Edit</button>

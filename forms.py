@@ -1,6 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, FloatField, SubmitField
-from wtforms.validators import DataRequired, NumberRange
+from wtforms import StringField, SubmitField, PasswordField, IntegerField, FloatField
+from wtforms.validators import DataRequired, URL, Email, NumberRange
+from flask_ckeditor import CKEditorField
 
 class ArticleForm(FlaskForm):
     code = IntegerField("Code", validators=[DataRequired()])

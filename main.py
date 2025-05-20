@@ -54,6 +54,14 @@ def home():
     all_parts = db.session.execute(db.select(Article).order_by(Article.code)).scalars().all()
     return render_template('index.html', parts=all_parts)
 
+@app.route('/parts/<int:article_code>', methods=['GET'])
+def view_material(article_code):
+    material = db.session.get(Article, article_code)
+    if not material:
+        flash('Material not found', 'danger')
+        return redirect(url_for('home'))
+    return render_template('parts.html', material=material)
+
 
 # Create
 @app.route('/add', methods=['GET', 'POST'])

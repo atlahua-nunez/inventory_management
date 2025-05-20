@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Part Data{% endblock %}
+    {% block styles %}
+        {{ bootstrap.load_css() }}
+        <link rel="stylesheet" href="{{ url_for('static',filename='styles.css')}}">
+    {% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Material detail</h2>
+    <div class="card p-3 shadow-sm rounded">
+        <p><strong>Name:</strong> {{material.name}}</p>
+        <p><strong>Part ID:</strong> {{material.code}}</p>
+        <p><strong>Price:</strong> ${{material.unit_price}}</p>
+    </div>
+
+    <div class="mt-5">
+        <h4>Ventas del material</h4>
+        <!--Gráfico irá aqui-->
+        <canva id="salesChart" width="400" height="200"></canva>
+    </div>
+</div>
+
+{% endblock %}

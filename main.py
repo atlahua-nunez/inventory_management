@@ -23,7 +23,7 @@ db.init_app(app)
 # Define Model
 class Article(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    code: Mapped[int] = mapped_column(Integer, nullable=False)
+    code: Mapped[str] = mapped_column(String, nullable=False)
     name: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
     description: Mapped[str] = mapped_column(String(250), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -54,9 +54,15 @@ def home():
     all_parts = db.session.execute(db.select(Article).order_by(Article.code)).scalars().all()
     return render_template('index.html', parts=all_parts)
 
-@app.route('/parts/<int:article_code>', methods=['GET'])
+@app.route('/parts/<string:article_code>', methods=['GET'])
 def view_material(article_code):
-    material = db.session.get(Article, article_code)
+    # Si viene un nuevo code en los parametros GET, redirige a la nueva URL
+    new_code = request.args.get('code')
+    if new_code:
+        return redirect(url_for('view_material', article_code=new_code.lower()))
+
+    # Buscar el material al dar clic en el nombre del numero de parte, si el material existe redirije a parts.html
+    material = db.session.execute(db.select(Article).where(Article.code.ilike(article_code))).scalar()
     if not material:
         flash('Material not found', 'danger')
         return redirect(url_for('home'))
@@ -81,7 +87,7 @@ def add():
         return redirect(url_for('home'))
     return render_template('/add.html', form=form)
 
-@app.route('/edit/<int:article_code>', methods=["GET", "POST"])
+@app.route('/edit/<string:article_code>', methods=["GET", "POST"])
 def edit(article_code):
     article = db.get_or_404(Article, article_code)
     if request.method == "POST":
@@ -94,7 +100,7 @@ def edit(article_code):
 
 
 
-@app.route('/delete/<int:article_code>')
+@app.route('/delete/<string:article_code>')
 def delete(article_code):
     article = db.get_or_404(Article, article_code)
     db.session.delete(article)

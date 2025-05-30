@@ -1,9 +1,14 @@
+import io
+import pandas as pd
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap5
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Float
 from forms import ArticleForm
+import csv
+from io import TextIOWrapper
+
 
 class Base(DeclarativeBase):
     pass
@@ -66,7 +71,7 @@ def view_material(article_code):
     if not material:
         flash('Material not found', 'danger')
         return redirect(url_for('home'))
-    return render_template('parts.html', material=material)
+    return render_template('parts.html', article=material)
 
 
 # Create
@@ -89,7 +94,7 @@ def add():
 
 @app.route('/edit/<string:article_code>', methods=["GET", "POST"])
 def edit(article_code):
-    article = db.get_or_404(Article, article_code)
+    article = Article.query.filter_by(code=article_code).first_or_404()
     if request.method == "POST":
         article.quantity = float(request.form["quantity"])
         article.unit_price = float(request.form["unit_price"])
@@ -107,6 +112,56 @@ def delete(article_code):
     db.session.commit()
     flash("Article deleted successfully", "success")
     return redirect(url_for('home'))
+
+@app.route('/import', methods=['GET', 'POST'])
+def import_csv():
+    if request.method == 'POST':
+        file = request.files.get('file')
+
+        if not file or not file.filename.endswith('.csv'):
+            flash('Not a valid file, please use a valid CSV file.')
+            return redirect(url_for('home'))
+
+        try:
+            df = pd.read_csv(file)
+            required_columns = {'code', 'name', 'description', 'quantity', 'unit_price'}
+            if not required_columns.issubset(df.columns):
+                flash('File must have titles for each column: code, name, description, quantity, unit_price')
+                return redirect(url_for('import.html'))
+
+            added = 0
+            for _,row in df.iterrows():
+                try:
+                    code = str(row['code']).strip()
+                    name = str(row['name']).strip()
+                    description = str(row['description']).strip()
+                    quantity = int(row['quantity'])
+                    unit_price = float(row['unit_price'])
+
+                    existing = Article.query.filter_by(code=code).first()
+                    if not existing:
+                        new_article = Article(
+                            code=code,
+                            name=name,
+                            description=description,
+                            quantity=quantity,
+                            unit_price=unit_price,
+                        )
+                        db.session.add(new_article)
+                        added += 1
+                except Exception as e:
+                    flash(f"Error trying to process the row: {e}")
+                    continue
+
+            db.session.commit()
+            flash(f"{added} succesfully imported articles.")
+            return redirect(url_for('home'))
+
+        except Exception as e:
+            flash(f"Error trying to read the file: {e}")
+            return redirect(url_for('home'))
+    return render_template('import.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

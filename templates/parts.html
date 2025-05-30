@@ -9,22 +9,17 @@
 {% block content %}
 <div class="container mt-4">
     <h2>Material detail</h2>
-    <form action="{{ url_for('view_material', article_code=material.code) }}" method="GET" class="row g-3 mb-4">
-<!--        <div class="col-auto">-->
-<!--            <input type="text" class="form-control" name="code" placeholder="Número de parte" required>-->
-<!--        </div>-->
-<!--        <div class="col-auto">-->
-<!--            <button type="submit" class="btn btn-primary mb-3">Buscar</button>-->
-<!--        </div>-->
+    <form action="{{ url_for('view_material', article_code=article.code) }}" method="GET" class="row g-3 mb-4">
+
         <div class="input-group mb-3">
-            <input type="text" class="form-control" name="code" placeholder="Buscar número de parte">
-            <button type="submit" class="btn btn-outline-primary">Buscar</button>
+            <input type="text" class="form-control" name="code" placeholder="Search part number">
+            <button type="submit" class="btn btn-outline-primary">Search</button>
         </div>
     </form>
     <div class="card p-3 shadow-sm rounded">
-        <p><strong>Name:</strong> {{material.name}}</p>
-        <p><strong>Part ID:</strong> {{material.code}}</p>
-        <p><strong>Price:</strong> ${{material.unit_price}}</p>
+        <p><strong>Name:</strong> {{article.name}}</p>
+        <p><strong>Part ID:</strong> {{article.code}}</p>
+        <p><strong>Price:</strong> ${{article.unit_price}}</p>
     </div>
 
     <div class="mt-5">

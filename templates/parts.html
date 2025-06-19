@@ -23,9 +23,11 @@
     </div>
 
     <div class="mt-5">
-        <h4>Ventas del material</h4>
-        <!--Gráfico irá aqui-->
-        <canva id="salesChart" width="400" height="200"></canva>
+        <h1>{{ article.name }}</h1>
+        <p>Código: {{ article.code }}</p>
+
+        <h3>Ventas</h3>
+        <img src="data:image/png;base64,{{ chart }}" alt="Ventas mensuales">
     </div>
 </div>
 

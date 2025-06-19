@@ -1,13 +1,19 @@
 import io
+from statistics import quantiles
+
 import pandas as pd
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_bootstrap import Bootstrap5
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import Integer, String, Float
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import Integer, String, Float, Date, ForeignKey
 from forms import ArticleForm
 import csv
 from io import TextIOWrapper
+from datetime import datetime, timedelta, date
+import random
+import matplotlib.pyplot as plt
+import base64
 
 
 class Base(DeclarativeBase):
@@ -27,6 +33,7 @@ db.init_app(app)
 
 # Define Model
 class Article(db.Model):
+    __tablename__ = "articles"
     id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String, nullable=False)
     name: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
@@ -34,10 +41,50 @@ class Article(db.Model):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_price: Mapped[float] = mapped_column(Float, nullable=False)
 
+    sales: Mapped[list["Sale"]] = relationship("Sale", back_populates="article")
+
+#Sales model
+class Sale(db.Model):
+    __tablename__ = "sales"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    article_id: Mapped[int] = mapped_column(ForeignKey("articles.id"))
+    date: Mapped[date] = mapped_column(Date)
+    quantity: Mapped[int] = mapped_column()
+
+    article: Mapped["Article"] = relationship("Article", back_populates="sales")
+
 #Create Tables
 with app.app_context():
     db.create_all()
 
+def generate_sales(article: Article, days_back=1825):
+    today = datetime.today().date()
+    start_date = today - timedelta(days=days_back)
+
+    current = start_date
+    while current <= today:
+        if random.random() < 0.2: # 20% chance de venta
+            quantity = random.randint(1, 5)
+            sale = Sale(article_id=article.id, date=current, quantity=quantity)
+            db.session.add(sale)
+        current += timedelta(days=1)
+    db.session.commit()
+
+def generate_sales_plot(sales_df):
+    df = pd.DataFrame(sales_df)
+    fig, ax = plt.subplots(figsize=(15, 4))
+    ax.plot(df['period'], df['quantity'], marker='o')
+    ax.set_title('Sales per month')
+    ax.set_xlabel('Period')
+    ax.set_ylabel('Qty sold')
+    plt.xticks(rotation=45)
+
+    buf = io.BytesIO()
+    plt.tight_layout()
+    fig.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode('utf-8')
 # Si opción == "Agregar Producto":
 #
 # Pedir nombre del producto
@@ -61,6 +108,7 @@ def home():
 
 @app.route('/parts/<string:article_code>', methods=['GET'])
 def view_material(article_code):
+
     # Si viene un nuevo code en los parametros GET, redirige a la nueva URL
     new_code = request.args.get('code')
     if new_code:
@@ -71,7 +119,20 @@ def view_material(article_code):
     if not material:
         flash('Material not found', 'danger')
         return redirect(url_for('home'))
-    return render_template('parts.html', article=material)
+
+    # Procesar ventas
+    sales_data = {sale.date.strftime('%Y-%m'): 0 for sale in material.sales}
+    for sale in material.sales:
+        key = sale.date.strftime('%Y-%m')
+        sales_data[key] += sale.quantity
+
+    df = pd.DataFrame(list(sales_data.items()), columns=['period', 'quantity'])
+    df.sort_values('period', inplace=True)
+
+    chart = generate_sales_plot(df.to_dict(orient='records'))
+    return render_template('parts.html', article=material, chart=chart)
+
+
 
 
 # Create
@@ -162,6 +223,13 @@ def import_csv():
             return redirect(url_for('home'))
     return render_template('import.html')
 
+@app.route('/seed_sales')
+def seed_sales():
+    articles = db.session.execute(db.select(Article)).scalars().all()
+    for article in articles:
+        generate_sales(article)
+    flash('Ventas ficticias generadas con éxito', 'success')
+    return redirect(url_for('home'))
 
 if __name__ == '__main__':
     app.run(debug=True)

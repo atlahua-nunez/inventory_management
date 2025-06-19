@@ -10,3 +10,4 @@ class ArticleForm(FlaskForm):
     quantity = IntegerField("Quantity", validators=[DataRequired(), NumberRange(min=1)])
     unit_price = FloatField("Unit Price", validators=[DataRequired(), NumberRange(min=0.01)])
     submit = SubmitField("Add Article")
+
